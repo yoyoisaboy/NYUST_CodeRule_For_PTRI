@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>導電板均勻度分析系統</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+
+:root {
+  --bg:      #d6d9df;
+  --panel:   #e8eaee;
+  --panel2:  #dde0e6;
+  --border:  #b8beca;
+  --border2: #a0a8b8;
+  --accent:  #1a6cde;
+  --green:   #1a8c52;
+  --red:     #c93030;
+  --yellow:  #b07000;
+  --text:    #1a2030;
+  --dim:     #5a6880;
+  --sub:     #7a8898;
+  --mono:    'Share Tech Mono', monospace;
+  --sans:    'Noto Sans TC', sans-serif;
+  --sh:      0 1px 3px rgba(0,0,0,0.12);
+  --shi:     inset 0 1px 0 rgba(255,255,255,0.5);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:9px 18px;background:var(--panel);border-bottom:1px solid var(--border);box-shadow:var(--sh);flex-shrink:0;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:26px;height:26px;display:grid;grid-template-columns:repeat(4,1fr);gap:2px;}
+.logo-icon span{background:var(--accent);border-radius:1px;animation:pcell 2s infinite;}
+.logo-icon span:nth-child(even){animation-delay:.3s;opacity:.4;}
+@keyframes pcell{0%,100%{opacity:1}50%{opacity:.3}}
+.logo-text{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:2px;}
+.logo-sub{font-size:10px;color:var(--sub);margin-top:1px;}
+.sys-status{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--green);}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 1.4s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+
+/* MAIN */
+.main{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 218px;gap:9px;padding:9px;overflow:hidden;}
+
+/* PANEL */
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:7px;box-shadow:var(--sh);display:flex;flex-direction:column;overflow:hidden;}
+.panel-accent{height:3px;}
+.live   .panel-accent{background:var(--accent);}
+.detect .panel-accent{background:var(--green);}
+.info   .panel-accent{background:var(--yellow);}
+.ctrl   .panel-accent{background:#6d28d9;}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;border-bottom:1px solid var(--border);background:var(--panel2);flex-shrink:0;}
+.pt{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);}
+
+/* BADGES */
+.badge{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:3px;font-weight:bold;white-space:nowrap;}
+.b-blue  {background:#dce8f8;color:var(--accent);border:1px solid #a8c8f0;}
+.b-green {background:#daf0e6;color:var(--green); border:1px solid #90d0b0;}
+.b-yellow{background:#f8eecc;color:var(--yellow);border:1px solid #e0c060;}
+.b-red   {background:#f8e0e0;color:var(--red);   border:1px solid #e0a0a0;}
+.b-dim   {background:var(--panel2);color:var(--dim);border:1px solid var(--border);}
+.b-purple{background:#ede8f8;color:#6d28d9;border:1px solid #c4b0f0;}
+.b-live  {animation:blink 1.2s infinite;}
+
+/* LIVE */
+.cam-wrap{flex:1;position:relative;overflow:hidden;background:#10141a;}
+canvas{width:100%;height:100%;display:block;}
+.cr{position:absolute;width:13px;height:13px;pointer-events:none;}
+.cr.tl{top:7px;left:7px;  border-top:2px solid #5a9cf8;border-left:2px solid #5a9cf8;}
+.cr.tr{top:7px;right:7px; border-top:2px solid #5a9cf8;border-right:2px solid #5a9cf8;}
+.cr.bl{bottom:7px;left:7px; border-bottom:2px solid #5a9cf8;border-left:2px solid #5a9cf8;}
+.cr.br{bottom:7px;right:7px;border-bottom:2px solid #5a9cf8;border-right:2px solid #5a9cf8;}
+
+/* DETECT */
+.det-wrap{flex:1;position:relative;overflow:hidden;background:#c8ccd4;}
+.rot-badge{position:absolute;bottom:7px;left:7px;font-family:var(--mono);font-size:10px;color:var(--yellow);background:rgba(240,236,220,0.95);padding:2px 6px;border:1px solid #d0b050;border-radius:3px;box-shadow:var(--sh);}
+.fleg{position:absolute;bottom:7px;right:7px;display:flex;flex-direction:column;gap:3px;}
+.fleg-item{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:9px;color:var(--text);background:rgba(240,242,245,0.95);padding:2px 5px;border-radius:3px;box-shadow:var(--sh);}
+.ldot{width:8px;height:8px;border-radius:50%;}
+
+/* INFO */
+.info-body{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:0 12px;padding:9px 12px;overflow:hidden;}
+.icol{display:flex;flex-direction:column;gap:0;}
+.irow{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #c8ccd6;}
+.ilabel{font-family:var(--mono);font-size:10px;color:var(--sub);letter-spacing:1px;}
+.ival{font-family:var(--mono);font-size:17px;color:var(--text);font-weight:bold;}
+.ival.lg{font-size:24px;}
+.ival.ok{color:var(--green);}
+.ival.ng{color:var(--red);}
+
+/* bars */
+.bars{display:flex;flex-direction:column;gap:8px;justify-content:center;}
+.blabel{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--sub);margin-bottom:3px;}
+.bbg{background:#b8beca;border-radius:3px;height:9px;overflow:hidden;}
+.bfill{height:100%;border-radius:3px;transition:width .5s ease;}
+
+/* history */
+.hist-sec{margin-top:5px;}
+.hist-title{font-family:var(--mono);font-size:9px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
+.hist-tbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px;}
+.hist-tbl th{color:var(--sub);font-size:9px;padding:2px 4px;border-bottom:1px solid var(--border);text-align:left;}
+.hist-tbl td{padding:3px 4px;border-bottom:1px solid #ccd0d8;vertical-align:middle;}
+.tok{display:inline-block;background:#daf0e6;color:var(--green);border:1px solid #90d0b0;border-radius:2px;padding:0 5px;font-size:9px;font-weight:bold;}
+.tng{display:inline-block;background:#f8e0e0;color:var(--red);  border:1px solid #e0a0a0;border-radius:2px;padding:0 5px;font-size:9px;font-weight:bold;}
+
+/* CTRL */
+.ctrl-body{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:9px 12px;}
+.csec{display:flex;flex-direction:column;gap:7px;}
+.ctitle{font-family:var(--mono);font-size:9px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;padding-bottom:5px;border-bottom:1px solid var(--border);}
+
+/* auto toggle */
+.auto-row{display:flex;align-items:center;gap:8px;}
+.toggle-wrap{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;}
+.toggle{width:36px;height:20px;border-radius:10px;background:#b8beca;border:1px solid var(--border2);position:relative;transition:background .2s;flex-shrink:0;}
+.toggle.on{background:#1a6cde;}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .2s;}
+.toggle.on::after{left:18px;}
+.toggle-label{font-family:var(--mono);font-size:10px;color:var(--dim);}
+
+.cpad{display:flex;align-items:center;justify-content:center;gap:8px;}
+.dbtn{width:48px;height:40px;background:var(--panel2);border:1px solid var(--border2);border-radius:6px;color:#6d28d9;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .1s;user-select:none;box-shadow:var(--sh),var(--shi);}
+.dbtn:hover{background:#e4e0f8;border-color:#9c6fec;}
+.dbtn:active{transform:scale(.93);box-shadow:none;}
+.sbtn{width:38px;height:40px;background:#f0d8d8;border:1px solid #e0a0a0;border-radius:6px;color:var(--red);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .1s;box-shadow:var(--sh);}
+.sbtn:hover{background:#e8c0c0;}
+.sbtn:active{transform:scale(.93);}
+
+.spd-row{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--sub);}
+.spd-row input{flex:1;accent-color:#6d28d9;}
+
+.belt-vis{height:21px;background:var(--panel2);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.belt-vis canvas{display:block;width:100%;height:100%;}
+
+.cbtns{display:flex;flex-direction:column;gap:6px;}
+.cbtn{padding:8px 11px;border-radius:6px;border:1px solid;cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:1px;transition:all .15s;display:flex;align-items:center;gap:5px;box-shadow:var(--sh);}
+.cbtn.cap{background:#daf0e6;border-color:#90d0b0;color:var(--green);}
+.cbtn.cap:hover{background:#c8e8d8;}
+.cbtn.end{background:#f8e0e0;border-color:#e0a0a0;color:var(--red);}
+.cbtn.end:hover{background:#f0c8c8;}
+.cntrow{font-family:var(--mono);font-size:10px;color:var(--sub);}
+.cntrow span{color:var(--accent);font-weight:bold;}
+
+/* TOAST */
+.toast{position:fixed;bottom:14px;right:14px;background:var(--panel);border-radius:7px;padding:9px 15px;font-family:var(--mono);font-size:11px;transform:translateX(230%);transition:transform .28s ease;z-index:100;display:flex;align-items:center;gap:7px;box-shadow:0 4px 14px rgba(0,0,0,.14);}
+.toast.ok-t {border-left:4px solid var(--green);color:var(--green);}
+.toast.err-t{border-left:4px solid var(--red);  color:var(--red);}
+.toast.show{transform:translateX(0);}
+
+/* AUTO flash */
+@keyframes roi-flash{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <div>
+      <div class="logo-text">PCB INSPECTOR v2.1</div>
+      <div class="logo-sub">導電板均勻度分析系統</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:18px;align-items:center">
+    <span style="font-family:var(--mono);font-size:11px;color:var(--sub)" id="clk"></span>
+    <span style="font-family:var(--mono);font-size:11px;color:var(--sub)">SESSION <span style="color:var(--accent)">#0042</span></span>
+    <div class="sys-status"><div class="dot"></div>ONLINE</div>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- 左上：即時 -->
+  <div class="panel live">
+    <div class="panel-accent"></div>
+    <div class="ph">
+      <div class="pt">📷 即時畫面 — Live Feed</div>
+      <div style="display:flex;gap:5px;align-items:center">
+        <span class="badge b-blue b-live">● LIVE</span>
+        <span class="badge b-dim" id="autoCapBadge" style="display:none">⚡ AUTO</span>
+      </div>
+    </div>
+    <div class="cam-wrap">
+      <canvas id="liveCanvas"></canvas>
+      <div class="cr tl"></div><div class="cr tr"></div>
+      <div class="cr bl"></div><div class="cr br"></div>
+    </div>
+  </div>
+
+  <!-- 右上：檢測 -->
+  <div class="panel detect">
+    <div class="panel-accent"></div>
+    <div class="ph">
+      <div class="pt">🔬 檢測畫面 — Detection</div>
+      <div style="display:flex;gap:5px">
+        <span class="badge b-dim" id="detBadge">WAITING</span>
+        <span class="badge b-green">ROI ON</span>
+      </div>
+    </div>
+    <div class="det-wrap">
+      <canvas id="detCanvas"></canvas>
+      <div class="rot-badge" id="rotBadge">矯正: —</div>
+      <div class="fleg">
+        <div class="fleg-item"><div class="ldot" style="background:#b0b4bc;border:1px solid #888"></div>均勻區</div>
+        <div class="fleg-item"><div class="ldot" style="background:#c93030"></div>瑕疵</div>
+        <div class="fleg-item"><div class="ldot" style="background:#d4aa30"></div>邊界</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 左下：資訊 -->
+  <div class="panel info">
+    <div class="panel-accent"></div>
+    <div class="ph">
+      <div class="pt">📊 辨識結果 — Analysis</div>
+      <span class="badge b-dim" id="resBadge">WAITING</span>
+    </div>
+    <div class="info-body">
+      <div class="icol">
+        <div class="irow"><span class="ilabel">TIME</span><span class="ival" id="timeVal" style="font-size:12px">—</span></div>
+        <div class="irow"><span class="ilabel">樣本 No.</span><span class="ival lg" id="sNo">001</span></div>
+        <div class="irow" style="border:none"><span class="ilabel">判定</span><span class="ival lg" id="resVal">—</span></div>
+        <div class="hist-sec">
+          <div class="hist-title">最近 3 筆</div>
+          <table class="hist-tbl">
+            <thead><tr><th>#</th><th>字母</th><th>均勻度</th><th>判定</th></tr></thead>
+            <tbody id="histBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="icol bars">
+        <div>
+          <div class="blabel"><span>均勻度</span><span id="uniPct">—</span></div>
+          <div class="bbg"><div class="bfill" id="uniBar" style="width:0%;background:linear-gradient(90deg,#1a8c52,#40c880)"></div></div>
+        </div>
+        <div>
+          <div class="blabel"><span>信心度</span><span id="confPct">—</span></div>
+          <div class="bbg"><div class="bfill" id="confBar" style="width:0%;background:linear-gradient(90deg,#1a6cde,#5a9cf8)"></div></div>
+        </div>
+        <div class="cntrow" style="margin-top:4px">已拍：<span id="cnt">0</span> 筆</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右下：控制 -->
+  <div class="panel ctrl">
+    <div class="panel-accent"></div>
+    <div class="ph">
+      <div class="pt">🕹️ 控制面板 — Control</div>
+      <span class="badge b-dim" id="cvStatus">輸送帶：停止</span>
+    </div>
+    <div class="ctrl-body">
+
+      <!-- 輸送帶 -->
+      <div class="csec">
+        <div class="ctitle">⚙ 輸送帶</div>
+
+        <!-- AUTO toggle -->
+        <div class="auto-row">
+          <div class="toggle-wrap" onclick="toggleAuto()">
+            <div class="toggle" id="autoToggle"></div>
+            <span class="toggle-label" id="autoLabel">自動模式：關</span>
+          </div>
+        </div>
+
+        <div class="cpad">
+          <button class="dbtn" id="btnL"
+            onmousedown="manualMove('left')"  onmouseup="manualStop()" onmouseleave="manualStop()"
+            ontouchstart="manualMove('left')" ontouchend="manualStop()">◀</button>
+          <button class="sbtn" onclick="manualStop()">■</button>
+          <button class="dbtn" id="btnR"
+            onmousedown="manualMove('right')" onmouseup="manualStop()" onmouseleave="manualStop()"
+            ontouchstart="manualMove('right')" ontouchend="manualStop()">▶</button>
+        </div>
+        <div class="spd-row">
+          <span>速度</span>
+          <input type="range" min="1" max="10" value="5" id="spdSlider" oninput="updateSpd(this.value)">
+          <span id="spdVal">5</span>
+        </div>
+        <div class="belt-vis"><canvas id="beltCanvas"></canvas></div>
+      </div>
+
+      <!-- 鏡頭 -->
+      <div class="csec">
+        <div class="ctitle">📷 鏡頭操作</div>
+        <div class="cbtns">
+          <button class="cbtn cap" onclick="captureFrame()">⊙ 拍攝樣本</button>
+          <button class="cbtn end" onclick="stopSession()">◼ 結束並儲存</button>
+        </div>
+        <div class="cntrow" style="margin-top:4px">已拍：<span id="cnt2">0</span> 筆</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--sub);margin-top:2px;line-height:1.5">
+          自動模式：輸送帶持續左移，<br>樣本進入 ROI 後自動拍攝。
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<script>
+// ── CLOCK ──
+function tick(){
+  const n=new Date();
+  document.getElementById('clk').textContent=n.toLocaleDateString('zh-TW')+' '+n.toLocaleTimeString('zh-TW',{hour12:false});
+  document.getElementById('timeVal').textContent=n.toLocaleTimeString('zh-TW',{hour12:false});
+}
+setInterval(tick,1000); tick();
+
+// ── CANVASES ──
+const LC=document.getElementById('liveCanvas');
+const DC=document.getElementById('detCanvas');
+const BC=document.getElementById('beltCanvas');
+const lx=LC.getContext('2d'), dx=DC.getContext('2d'), bx=BC.getContext('2d');
+
+function resize(){
+  LC.width=LC.parentElement.clientWidth; LC.height=LC.parentElement.clientHeight;
+  DC.width=DC.parentElement.clientWidth; DC.height=DC.parentElement.clientHeight;
+  BC.width=BC.parentElement.clientWidth; BC.height=BC.parentElement.clientHeight;
+}
+
+// ── LIVE CANVAS ──
+const LETTERS='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+let samples=[], nextIdx=0, frame=0;
+let convSpd=0;           // px/frame; +ve = move left
+let autoMode=false;
+let capturing=false;     // locked during a capture animation
+
+function makeSample(){ return {letter:LETTERS[nextIdx%26],idx:nextIdx++,x:LC.width+30,captured:false}; }
+
+function initSamples(){
+  samples=[]; nextIdx=0;
+  for(let i=0;i<5;i++){ const s=makeSample(); s.x=LC.width+i*195+30; samples.push(s); }
+}
+
+// ROI dimensions (kept in sync with drawLive)
+function roiRect(){
+  const w=LC.width, h=LC.height;
+  const BW=155, BH=h*0.5;
+  const rw=BW+6, rh=BH+16;  // tight: barely wider than board
+  return {x:(w-rw)/2, y:(h-rh)/2, w:rw, h:rh, cx:w/2};
+}
+
+function drawLive(){
+  const w=LC.width, h=LC.height;
+  lx.clearRect(0,0,w,h);
+  lx.fillStyle='#10141a'; lx.fillRect(0,0,w,h);
+
+  // rails
+  const ry1=h*.2, ry2=h*.8;
+  lx.strokeStyle='#252e3a'; lx.lineWidth=1.5;
+  lx.beginPath();lx.moveTo(0,ry1);lx.lineTo(w,ry1);lx.stroke();
+  lx.beginPath();lx.moveTo(0,ry2);lx.lineTo(w,ry2);lx.stroke();
+
+  // belt ticks
+  const gap=30, off=((frame*convSpd*.35)%gap+gap)%gap;
+  lx.strokeStyle='#252e3a'; lx.lineWidth=1;
+  for(let x=-off;x<w+gap;x+=gap){lx.beginPath();lx.moveTo(x,ry1);lx.lineTo(x,ry2);lx.stroke();}
+
+  const BW=155, BH=h*.5, BY=(h-h*.5)/2;
+
+  // ── AUTO-CAPTURE CHECK ──
+  // Only trigger when the sample is FULLY inside the ROI (left edge AND right edge both within ROI)
+  // with a small tolerance so it snaps on true center alignment
+  if(autoMode && !capturing){
+    const roi=roiRect();
+    const roiMid=roi.x+roi.w/2;
+    samples.forEach(s=>{
+      if(s.captured) return;
+      const sLeft=s.x;
+      const sRight=s.x+BW;
+      const sMid=s.x+BW/2;
+      // Both edges inside ROI AND center within ±8px of ROI center
+      const fullyInside=sLeft>=roi.x && sRight<=roi.x+roi.w;
+      const centered=Math.abs(sMid-roiMid)<8;
+      if(fullyInside && centered){
+        triggerCapture(s);
+      }
+    });
+  }
+
+  // boards
+  for(let i=samples.length-1;i>=0;i--){
+    const s=samples[i];
+    s.x-=convSpd;
+    if(s.x+BW<-30){samples.splice(i,1);continue;}
+
+    const g=lx.createLinearGradient(s.x,BY,s.x+BW,BY+BH);
+    g.addColorStop(0,'#182030'); g.addColorStop(1,'#111828');
+    lx.fillStyle=g; lx.fillRect(s.x,BY,BW,BH);
+    lx.strokeStyle=s.captured?'rgba(26,140,82,.8)':'rgba(90,156,248,.35)';
+    lx.lineWidth=1.5; lx.strokeRect(s.x,BY,BW,BH);
+
+    // grid shimmer
+    const gc=7,gr=5,cw=BW/gc,ch=BH/gr;
+    for(let r=0;r<gr;r++) for(let c=0;c<gc;c++){
+      const n=Math.sin(frame*.04+c*.9+r*.7+s.idx*1.1)*.5+.5;
+      lx.fillStyle=`rgba(60,120,200,${.12+n*.22})`;
+      lx.fillRect(s.x+c*cw+1,BY+r*ch+1,cw-2,ch-2);
+    }
+
+    // letter watermark
+    lx.save();
+    lx.font=`bold ${Math.floor(BH*.58)}px 'Share Tech Mono',monospace`;
+    lx.textAlign='center'; lx.textBaseline='middle';
+    lx.globalAlpha=s.captured?.2:.12;
+    lx.fillStyle=s.captured?'#40c880':'#5a9cf8';
+    lx.fillText(s.letter,s.x+BW/2,BY+BH/2);
+    lx.globalAlpha=1; lx.restore();
+
+    // label
+    lx.font='10px Share Tech Mono'; lx.textAlign='left'; lx.textBaseline='top';
+    lx.fillStyle=s.captured?'#40c880':'#5a9cf8';
+    lx.fillText(`#${String(s.idx+1).padStart(2,'0')} ${s.letter}`,s.x+5,BY+4);
+    if(s.captured){
+      lx.font='9px Share Tech Mono'; lx.textAlign='right'; lx.fillStyle='#40c880aa';
+      lx.fillText('✓ CAPTURED',s.x+BW-4,BY+4);
+    }
+  }
+
+  const last=samples[samples.length-1];
+  if(!last||last.x<w-170) samples.push(makeSample());
+
+  // ROI box — flashes when auto mode on
+  const roi=roiRect();
+  const roiAlpha = autoMode ? (.55 + .3*Math.sin(frame*.12)) : .4;
+  lx.strokeStyle=`rgba(90,156,248,${roiAlpha})`; lx.lineWidth=autoMode?2:1; lx.setLineDash([5,5]);
+  lx.strokeRect(roi.x,roi.y,roi.w,roi.h); lx.setLineDash([]);
+  lx.font='9px Share Tech Mono'; lx.textAlign='center'; lx.textBaseline='bottom';
+  lx.fillStyle=autoMode?`rgba(90,200,248,${roiAlpha})`:'rgba(90,156,248,.5)';
+  lx.fillText(autoMode?'ROI  ⚡AUTO':'ROI',LC.width/2,roi.y-2);
+
+  // scan line
+  const sy=(frame*1.6)%h;
+  const sg=lx.createLinearGradient(0,sy-10,0,sy+10);
+  sg.addColorStop(0,'transparent'); sg.addColorStop(.5,'rgba(90,156,248,.08)'); sg.addColorStop(1,'transparent');
+  lx.fillStyle=sg; lx.fillRect(0,sy-10,w,20);
+
+  // corners
+  lx.strokeStyle='rgba(90,156,248,.7)'; lx.lineWidth=2;
+  [[7,7,1,1],[w-7,7,-1,1],[7,h-7,1,-1],[w-7,h-7,-1,-1]].forEach(([x,y,ddx,ddy])=>{
+    lx.beginPath();lx.moveTo(x+ddx*14,y);lx.lineTo(x,y);lx.lineTo(x,y+ddy*14);lx.stroke();
+  });
+
+  frame++; requestAnimationFrame(drawLive);
+}
+
+// ── BELT CANVAS ──
+let beltPx=0;
+function drawBelt(){
+  const w=BC.width, h=BC.height;
+  bx.clearRect(0,0,w,h); bx.fillStyle='#d0d4da'; bx.fillRect(0,0,w,h);
+  beltPx=(beltPx+convSpd*.4+200)%20;
+  bx.fillStyle='#a090d8';
+  for(let x=beltPx%20-20;x<w+20;x+=20){bx.beginPath();bx.arc(x,h/2,2,0,Math.PI*2);bx.fill();}
+  if(convSpd!==0){
+    bx.font='10px Share Tech Mono'; bx.fillStyle='#6d28d9';
+    bx.textAlign='center'; bx.textBaseline='middle';
+    bx.fillText(convSpd>0?'← ← ← ← ←':'→ → → → →',w/2,h/2);
+  }
+  requestAnimationFrame(drawBelt);
+}
+
+// ── DETECT CANVAS ──
+let sampleData=null;
+
+function genSampleData(){
+  const hasDefect=Math.random()<.42;
+  const cols=12,rows=8; let data=[];
+  let dc=0,dr=0,drad=0;
+  if(hasDefect){ dc=2+Math.floor(Math.random()*(cols-4)); dr=1+Math.floor(Math.random()*(rows-2)); drad=.8+Math.random()*1.6; }
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    const border=(r===0||r===rows-1||c===0||c===cols-1);
+    const dist=Math.sqrt((c-dc)**2+(r-dr)**2);
+    const isD=hasDefect&&dist<drad;
+    const type=border?'border':isD?'defect':'ok';
+    const val=type==='ok'?.80+Math.random()*.18:type==='defect'?.08+Math.random()*.25:.55+Math.random()*.25;
+    data.push({r,c,type,val});
+  }
+  return data;
+}
+
+function drawDetect(rot){
+  const w=DC.width,h=DC.height;
+  dx.clearRect(0,0,w,h);
+  dx.fillStyle='#c0c4cc'; dx.fillRect(0,0,w,h);
+  const cols=12,rows=8,ox=18,oy=14;
+  const cw=(w-36)/cols, ch=(h-28)/rows;
+  dx.save();
+  dx.translate(w/2,h/2); dx.rotate(rot*Math.PI/180); dx.translate(-w/2,-h/2);
+  if(sampleData){
+    sampleData.forEach(({r,c,type,val})=>{
+      const x=ox+c*cw,y=oy+r*ch;
+      if(type==='ok'){
+        const s=Math.floor(165+val*70); // 165-235 grey range
+        dx.fillStyle=`rgb(${s},${s},${s})`;
+      } else if(type==='defect'){
+        dx.fillStyle=`rgba(200,48,48,${.55+val*.4})`;
+      } else {
+        dx.fillStyle=`rgba(200,168,40,${.5+val*.35})`;
+      }
+      dx.fillRect(x+1,y+1,cw-2,ch-2);
+      dx.strokeStyle='rgba(0,0,0,.08)'; dx.lineWidth=.5;
+      dx.strokeRect(x+1,y+1,cw-2,ch-2);
+    });
+    // black letter overlay
+    const letter=LETTERS[(sampleNo-2+260)%26]||'?';
+    dx.font=`bold ${Math.min(Math.floor(h*.55),78)}px 'Share Tech Mono',monospace`;
+    dx.textAlign='center'; dx.textBaseline='middle';
+    dx.fillStyle='rgba(0,0,0,.11)'; dx.fillText(letter,w/2,h/2);
+  }
+  dx.restore();
+  dx.strokeStyle='rgba(26,108,222,.28)'; dx.lineWidth=1.5;
+  dx.strokeRect(ox,oy,w-36,h-28);
+}
+
+// ── HISTORY ──
+let sampleNo=1;
+const history=[], allResults=[];
+const HMAX=3;
+
+function updateMetrics(letter){
+  if(!sampleData) return;
+  const defects=sampleData.filter(d=>d.type==='defect').length;
+  const ok=sampleData.filter(d=>d.type==='ok').length;
+  const uni=Math.round(ok/sampleData.length*100);
+  const conf=86+Math.floor(Math.random()*13);
+  const result=defects===0&&uni>=72?'OK':'NG';
+  const ts=new Date().toLocaleTimeString('zh-TW',{hour12:false});
+
+  document.getElementById('uniPct').textContent=uni+'%';
+  document.getElementById('confPct').textContent=conf+'%';
+  document.getElementById('uniBar').style.width=uni+'%';
+  document.getElementById('confBar').style.width=conf+'%';
+  document.getElementById('sNo').textContent=String(sampleNo).padStart(3,'0');
+
+  const rv=document.getElementById('resVal');
+  rv.textContent=result; rv.className='ival lg '+(result==='OK'?'ok':'ng');
+  const rb=document.getElementById('resBadge');
+  rb.textContent=result==='OK'?'✓ PASS':'✗ FAIL';
+  rb.className='badge '+(result==='OK'?'b-green':'b-red');
+
+  const entry={no:sampleNo,letter,uni,conf,result,ts};
+  history.unshift(entry); if(history.length>HMAX) history.length=HMAX;
+  allResults.push(entry);
+  renderHist();
+  const n=allResults.length;
+  document.getElementById('cnt').textContent=n;
+  document.getElementById('cnt2').textContent=n;
+  sampleNo++;
+}
+
+function renderHist(){
+  let html='';
+  for(let i=0;i<HMAX;i++){
+    if(i<history.length){
+      const h=history[i];
+      html+=`<tr><td>#${String(h.no).padStart(3,'0')}</td><td><b>${h.letter}</b></td><td>${h.uni}%</td>
+        <td>${h.result==='OK'?'<span class="tok">OK</span>':'<span class="tng">NG</span>'}</td></tr>`;
+    } else {
+      html+=`<tr><td colspan="4" style="color:#a0a8b8;text-align:center;font-size:9px">—</td></tr>`;
+    }
+  }
+  document.getElementById('histBody').innerHTML=html;
+}
+
+// ── TOAST ──
+function toast(msg,ok=true){
+  const t=document.getElementById('toast');
+  t.className='toast show '+(ok?'ok-t':'err-t');
+  document.getElementById('toastMsg').textContent=msg;
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ── CONVEYOR SPEED HELPERS ──
+function setConvSpd(v){
+  convSpd=v;
+  const el=document.getElementById('cvStatus');
+  if(v>0){ el.textContent='← 左移'; el.className='badge b-blue'; }
+  else if(v<0){ el.textContent='右移 →'; el.className='badge b-blue'; }
+  else { el.textContent='輸送帶：停止'; el.className='badge b-dim'; }
+}
+
+// ── AUTO MODE ──
+let autoSpd=0; // stores auto speed separately
+
+function toggleAuto(){
+  autoMode=!autoMode;
+  const tog=document.getElementById('autoToggle');
+  const lbl=document.getElementById('autoLabel');
+  const badge=document.getElementById('autoCapBadge');
+  tog.className='toggle'+(autoMode?' on':'');
+  lbl.textContent='自動模式：'+(autoMode?'開':'關');
+  badge.style.display=autoMode?'inline-block':'none';
+  if(autoMode){
+    // start belt at current speed setting, leftward
+    const spd=parseFloat(document.getElementById('spdSlider').value);
+    autoSpd=spd*.4;
+    setConvSpd(autoSpd);
+    // disable manual direction buttons visually
+    document.getElementById('btnL').style.opacity='.45';
+    document.getElementById('btnR').style.opacity='.45';
+  } else {
+    autoSpd=0;
+    setConvSpd(0);
+    document.getElementById('btnL').style.opacity='';
+    document.getElementById('btnR').style.opacity='';
+  }
+}
+
+// ── MANUAL CONTROLS (work even in auto-off) ──
+function manualMove(dir){
+  if(autoMode) return; // blocked in auto
+  const spd=parseFloat(document.getElementById('spdSlider').value);
+  setConvSpd((dir==='left'?1:-1)*spd*.4);
+}
+function manualStop(){
+  if(autoMode) return;
+  setConvSpd(0);
+}
+function updateSpd(v){
+  document.getElementById('spdVal').textContent=v;
+  if(autoMode){ autoSpd=v*.4; setConvSpd(autoSpd); }
+  else if(convSpd!==0){ setConvSpd((convSpd>0?1:-1)*v*.4); }
+}
+
+// ── CAPTURE LOGIC ──
+function triggerCapture(sample){
+  if(capturing) return;
+  capturing=true;
+  sample.captured=true;
+
+  const letter=sample.letter;
+  const rot=(Math.random()-.5)*7;
+  document.getElementById('rotBadge').textContent=`矯正: ${rot>0?'+':''}${rot.toFixed(1)}°`;
+  document.getElementById('detBadge').textContent='⚙ 矯正中';
+  document.getElementById('detBadge').className='badge b-yellow';
+
+  sampleData=genSampleData();
+  toast(`${autoMode?'⚡ 自動':'手動'}拍攝 — ${letter} #${String(sampleNo).padStart(3,'0')}`);
+
+  // pause belt briefly if auto
+  const savedSpd=convSpd;
+  if(autoMode) setConvSpd(0);
+
+  let r=rot;
+  const iv=setInterval(()=>{
+    r*=.83; drawDetect(r);
+    document.getElementById('rotBadge').textContent=`矯正: ${r>0?'+':''}${r.toFixed(1)}°`;
+    if(Math.abs(r)<.1){
+      clearInterval(iv);
+      drawDetect(0);
+      document.getElementById('rotBadge').textContent='矯正: 0.0° ✓';
+      document.getElementById('detBadge').textContent='✓ ALIGNED';
+      document.getElementById('detBadge').className='badge b-green';
+      updateMetrics(letter);
+      capturing=false;
+      if(autoMode) setConvSpd(savedSpd||autoSpd); // resume belt
+    }
+  },30);
+}
+
+// Manual capture button
+function captureFrame(){
+  const cx=LC.width/2;
+  let closest=null,minD=Infinity;
+  samples.forEach(s=>{ const d=Math.abs(s.x+77-cx); if(d<minD){minD=d;closest=s;} });
+  const s=closest||{letter:LETTERS[(sampleNo-1)%26],idx:sampleNo-1,x:cx-77,captured:false};
+  triggerCapture(s);
+}
+
+// ── STOP SESSION ──
+function stopSession(){
+  if(allResults.length===0){toast('尚無資料可儲存',false);return;}
+  // turn off auto if on
+  if(autoMode) toggleAuto();
+  const header='樣本編號,字母,時間,均勻度(%),信心度(%),結果';
+  const rows=allResults.map(h=>`${h.no},${h.letter},${h.ts},${h.uni},${h.conf},${h.result}`);
+  const csv=[header,...rows].join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`pcb_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  toast(`✓ ${allResults.length} 筆已儲存`);
+
+  sampleNo=1; history.length=0; allResults.length=0; sampleData=null;
+  renderHist();
+  ['resBadge','detBadge'].forEach(id=>{const e=document.getElementById(id);e.textContent='WAITING';e.className='badge b-dim';});
+  document.getElementById('resVal').textContent='—'; document.getElementById('resVal').className='ival lg';
+  ['uniPct','confPct'].forEach(id=>document.getElementById(id).textContent='—');
+  document.getElementById('uniBar').style.width='0%'; document.getElementById('confBar').style.width='0%';
+  document.getElementById('cnt').textContent='0'; document.getElementById('cnt2').textContent='0';
+  document.getElementById('rotBadge').textContent='矯正: —';
+  drawDetect(0);
+}
+
+// ── INIT ──
+window.addEventListener('resize',()=>{resize();drawDetect(0);});
+setTimeout(()=>{ resize(); initSamples(); drawLive(); drawBelt(); drawDetect(0); renderHist(); },120);
+</script>
+</body>
+</html>
