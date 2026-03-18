@@ -1,8 +1,3 @@
----
-title: 115年科專-雲科程式碼交接事項
-
----
-
 # 115年科專-雲科程式碼交接事項
 
 ## 1. 完整程式碼與相關檔案
@@ -133,8 +128,6 @@ https://yoyoisaboy.github.io/NYUST_CodeRule_For_PTRI/conductive_board_inspector.
 以我們的資料fx12_Fianl hamida的辨識結果，辨識率達99%，辨識速度為5s左右
 ![messageImage_1735107421091](https://hackmd.io/_uploads/rJFZUR_L1x.jpg)
 
-
-
 ## 3. 交接紀錄
 ### (1) 交接會議
 * 舉行交接會議，講解程式碼整個SOP流程
@@ -144,6 +137,6 @@ https://yoyoisaboy.github.io/NYUST_CodeRule_For_PTRI/conductive_board_inspector.
 ### (3) 交接清單
 * 詳列所有交付內容（如程式碼、文檔、模型等），雙方簽字確認
 
-
+p.s. 網站用GPT做的，我前端沒很強都可以刻成這樣，別告訴我不會歐~~ 加油!!
 # 注意事項!!
 * 以上內容請統一個版本，請勿分開繳交多個版本
