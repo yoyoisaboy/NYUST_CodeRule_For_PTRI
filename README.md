@@ -144,4 +144,4 @@ https://yoyoisaboy.github.io/NYUST_CodeRule_For_PTRI/conductive_board_inspector.
 # 注意事項!!
 * 以上內容請統一個版本，請勿分開繳交多個版本
 
-p.s. 網站用GPT做的我前端沒很強都可以刻成這樣了，所以加油歐 !!
+p.s. 網站用GPT做的，所以加油歐 !!
