@@ -71,7 +71,6 @@ c.py : 介面應用 (flask)
 
 ```
 cmd : python3 train.py .\a.png .\b.png --size 259 --epoch 100 --batch_size 50
-
 * 參數 : 輸入a、b圖片，輸出大小(--size)259，epoch 100次...
 * 更多參數說明可參閱train.py註解
 ```
@@ -111,7 +110,7 @@ ex : 五鈴操作儀器為例
 
 #### 2. 如果是用web網頁操作 : 
 
-ex: Visdom服務器為例
+ex:
 * cmd : python -m visdom.server 然後訪問 http://localhost:8097 
 * 從開起到操作結束
 
