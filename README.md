@@ -116,17 +116,21 @@ ex: Visdom服務器為例
 * 從開起到操作結束
 
 #### 3. 介面功能說明
-![S__31465489](https://hackmd.io/_uploads/BJHYPhPqbg.jpg)
+<img width="994" height="521" alt="image" src="https://github.com/user-attachments/assets/57de5d25-0777-4eeb-b108-8c1feed34024" />
+
 示範網站:
 https://yoyoisaboy.github.io/NYUST_CodeRule_For_PTRI/conductive_board_inspector.html
 
+1. 即時畫面 : 高光譜鏡頭於輸送帶上即時的拍攝影像 (此畫面為動態
+2. 檢測畫面 : 經過高光譜鏡頭線性掃描後，成像出來的偽色圖，有歪斜需要矯正回來(顏色起碼有均勻度的色塊，例如用綠色，不是則用其他顏色，此範例用瑕疵當作沒均勻的部分，此畫面為靜態
+3. 辨識結果 : Time時間、樣本編號、判定結果(NG、OK)、最近掃描的三筆
+4. 辨識結果 : 檢測畫面的均勻度與信心度百分比、累積拍攝幾筆(重新開啟程式重置數字)
+5. 控制面板 : 輸送帶可以輸入從x移動到y、有移動調整功能、速度調整(左右停止)，如果需要像五鈴一樣，拍攝前的調整，可自行新增功能上去)、自動模式是方便給你知道情境式甚麼
+6. 控制面板 : 載入模型、曝光時間、拍黑白、手動拍攝(根據輸入從x移動到y的數字，從x動到y進行拍攝)
+
 ### (4) 測試報告 (Word、ppt、READMD.md)
-* 測試的環境:電腦版本、GPU、CPU、使用的套件(requirement.txt)
-* 提供測試結果說明
-執行後如下圖顯示，左圖為原始圖像，右圖為訓練的標準答案(Ground truth)...
-![messageImage_1735107506382](https://hackmd.io/_uploads/BJLBECdU1g.jpg)
-以我們的資料fx12_Fianl hamida的辨識結果，辨識率達99%，辨識速度為5s左右
-![messageImage_1735107421091](https://hackmd.io/_uploads/rJFZUR_L1x.jpg)
+* 測試的環境 : 環境參數、電腦版本、GPU、CPU、使用的安裝套件(requirement.txt)
+* 提供測試結果說明 : 平台移動速度、畫面功能操作介紹、測試結果(OK、NG各一筆)
 
 ## 3. 交接紀錄
 ### (1) 交接會議
@@ -137,6 +141,7 @@ https://yoyoisaboy.github.io/NYUST_CodeRule_For_PTRI/conductive_board_inspector.
 ### (3) 交接清單
 * 詳列所有交付內容（如程式碼、文檔、模型等），雙方簽字確認
 
-p.s. 網站用GPT做的，我前端沒很強都可以刻成這樣，別告訴我不會歐~~ 加油!!
 # 注意事項!!
 * 以上內容請統一個版本，請勿分開繳交多個版本
+
+p.s. 網站用GPT做的我前端沒很強都可以刻成這樣了，所以加油歐 !!
